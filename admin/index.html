@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — TSVC Studio</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* Override body grain for admin */
+    body.admin-page::after { display: none; }
+    body.admin-page { background: #050505; }
+  </style>
+</head>
+<body class="admin-page">
+
+<!-- ══════════════════════════════════
+     LOGIN SCREEN
+     ══════════════════════════════════ -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">TSVC <span class="accent">ADMIN</span></div>
+    <div class="login-sub">Studio Dashboard</div>
+    <input class="login-field" type="password" id="login-pw" placeholder="Enter password" autocomplete="current-password">
+    <button class="login-btn" id="login-btn">Access Dashboard</button>
+    <div class="login-err" id="login-err">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     DASHBOARD (hidden until login)
+     ══════════════════════════════════ -->
+<div id="dashboard" style="display:none;">
+
+  <!-- Admin Nav -->
+  <nav class="admin-nav">
+    <div class="admin-nav-logo">TSVC <span>ADMIN</span></div>
+    <div class="admin-nav-right">
+      <a href="../index.html" class="admin-nav-site">← View Site</a>
+      <button class="admin-logout" id="logout-btn">Logout</button>
+    </div>
+  </nav>
+
+  <div class="admin-wrap">
+    <div class="admin-title">Dashboard</div>
+    <div class="admin-subtitle">Manage your portfolio, testimonials, and service cards.</div>
+
+    <!-- Tabs -->
+    <div class="a-tabs">
+      <button class="a-tab active" data-tab="portfolio">Portfolio</button>
+      <button class="a-tab" data-tab="testimonials">Testimonials</button>
+      <button class="a-tab" data-tab="services">Services</button>
+    </div>
+
+    <!-- ══ PORTFOLIO PANEL ══ -->
+    <div class="a-panel active" id="tab-portfolio">
+
+      <div class="a-card">
+        <div class="a-card-title">Add Portfolio Item</div>
+        <div class="a-alert" id="port-alert"></div>
+        <div class="a-row">
+          <div>
+            <label class="a-label">Item Title</label>
+            <input class="a-input" id="port-title" type="text" placeholder="e.g. Brand Video — Nike">
+          </div>
+          <div>
+            <label class="a-label">Category / Tag</label>
+            <input class="a-input" id="port-category" type="text" placeholder="e.g. Short-Form, Brand Video">
+          </div>
+        </div>
+
+        <label class="a-label">Image URL (paste link)</label>
+        <input class="a-input" id="port-url" type="url" placeholder="https://...">
+        <label class="a-label" style="margin-top:0.25rem;">— or upload image —</label>
+        <input class="a-input" id="port-file" type="file" accept="image/*" style="padding:0.5rem;cursor:pointer;">
+
+        <div style="display:flex;align-items:center;gap:1rem;margin-top:0.25rem;">
+          <div id="port-preview" style="width:80px;height:60px;background:#0a0a0a;border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;flex-shrink:0;"></div>
+          <button class="a-btn" id="port-add-btn">Add to Portfolio</button>
+        </div>
+      </div>
+
+      <div class="a-card">
+        <div class="a-card-title">Portfolio Items (<span id="port-count">0</span>)</div>
+        <div class="a-items-grid" id="port-list"></div>
+      </div>
+    </div>
+
+    <!-- ══ TESTIMONIALS PANEL ══ -->
+    <div class="a-panel" id="tab-testimonials">
+
+      <div class="a-card">
+        <div class="a-card-title">Add Testimonial</div>
+        <div class="a-alert" id="test-alert"></div>
+        <div class="a-row">
+          <div>
+            <label class="a-label">Client Name *</label>
+            <input class="a-input" id="test-name" type="text" placeholder="John Smith">
+          </div>
+          <div>
+            <label class="a-label">Role / Platform</label>
+            <input class="a-input" id="test-role" type="text" placeholder="Content Creator — 500k followers">
+          </div>
+        </div>
+        <label class="a-label">Testimonial Text *</label>
+        <textarea class="a-input" id="test-text" rows="3" placeholder="Working with TSVC Studio completely transformed my content…"></textarea>
+        <button class="a-btn" id="test-add-btn">Add Testimonial</button>
+      </div>
+
+      <div class="a-card">
+        <div class="a-card-title">Testimonials (<span id="test-count">0</span>)</div>
+        <div id="test-list"></div>
+      </div>
+    </div>
+
+    <!-- ══ SERVICES PANEL ══ -->
+    <div class="a-panel" id="tab-services">
+
+      <div class="a-card">
+        <div class="a-card-title">Service Cards</div>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.4);margin-bottom:1.25rem;">
+          Click "Edit" on any service card to update its image, name, or description.
+          These 6 cards appear on both the Home and Services pages.
+        </p>
+        <div class="a-services-grid" id="services-list"></div>
+      </div>
+
+      <!-- Edit modal -->
+      <div id="service-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);z-index:500;display:none;align-items:center;justify-content:center;">
+        <div style="background:#111;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:2rem;width:100%;max-width:520px;margin:1rem;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:0.08em;margin-bottom:1.25rem;color:rgba(255,255,255,0.8);">Edit Service Card</div>
+          <input type="hidden" id="edit-service-id">
+
+          <label class="a-label">Service Name</label>
+          <input class="a-input" id="edit-service-name" type="text">
+
+          <label class="a-label">Short Description</label>
+          <textarea class="a-input" id="edit-service-desc" rows="2"></textarea>
+
+          <label class="a-label">Image URL</label>
+          <input class="a-input" id="edit-service-url" type="url" placeholder="https://...">
+          <label class="a-label" style="margin-top:0.2rem;">— or upload image —</label>
+          <input class="a-input" id="edit-service-file" type="file" accept="image/*" style="padding:0.5rem;cursor:pointer;">
+
+          <div id="edit-service-preview" style="width:100%;height:140px;background:#0a0a0a;border:1px solid rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;margin:0.5rem 0 1rem;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;position:relative;">No Image</div>
+
+          <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+            <button class="a-btn-sm" id="cancel-edit-btn">Cancel</button>
+            <button class="a-btn" id="save-service-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Google Fonts (needed for admin too) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+
+<script>
+/* ══════════════════════════════════
+   TSVC Admin Panel — admin.js
+   ══════════════════════════════════ */
+
+const ADMIN_PASSWORD = 'tsvcadmin2025'; // Change this!
+const SESSION_KEY    = 'tsvc_admin_session';
+
+// ── STORE ──
+const STORE = {
+  get: (k, fb = null) => { try { return JSON.parse(localStorage.getItem(k)) ?? fb; } catch { return fb; } },
+  set: (k, v)         => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+
+const DEFAULT_SERVICES = [
+  { id: 's1', name: 'Short-Form Content', desc: 'Viral Reels, TikToks & Shorts engineered for maximum organic reach.',     image: '' },
+  { id: 's2', name: 'Long-Form Editing',  desc: 'Full-length video editing with cinematic storytelling and pacing.',        image: '' },
+  { id: 's3', name: 'Social Media Mgmt',  desc: 'Strategy, scheduling & community growth across all major platforms.',      image: '' },
+  { id: 's4', name: 'Brand Videos',       desc: 'Professional brand identity films that define your digital presence.',    image: '' },
+  { id: 's5', name: 'Thumbnails & GFX',   desc: 'High-conversion visual assets designed to stop the scroll instantly.',    image: '' },
+  { id: 's6', name: 'Strategy & Consult', desc: 'Data-driven content strategy sessions to accelerate your growth curve.',  image: '' },
+];
+
+function getServices()       { return STORE.get('tsvc_services', DEFAULT_SERVICES); }
+function getPortfolio()      { return STORE.get('tsvc_portfolio', []); }
+function getTestimonials()   { return STORE.get('tsvc_testimonials', []); }
+
+// ── LOGIN ──
+const loginScreen = document.getElementById('login-screen');
+const dashboard   = document.getElementById('dashboard');
+const loginPw     = document.getElementById('login-pw');
+const loginBtn    = document.getElementById('login-btn');
+const loginErr    = document.getElementById('login-err');
+const logoutBtn   = document.getElementById('logout-btn');
+
+function checkSession() {
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    showDashboard();
+  }
+}
+function showDashboard() {
+  loginScreen.style.display = 'none';
+  dashboard.style.display   = 'block';
+  renderAll();
+}
+function doLogin() {
+  if (loginPw.value === ADMIN_PASSWORD) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    loginErr.style.display = 'none';
+    showDashboard();
+  } else {
+    loginErr.style.display = 'block';
+    loginPw.value = '';
+    loginPw.focus();
+  }
+}
+
+loginBtn.addEventListener('click', doLogin);
+loginPw.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+logoutBtn.addEventListener('click', () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+});
+
+checkSession();
+
+// ── TABS ──
+document.querySelectorAll('.a-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.a-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.a-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── HELPERS ──
+function showAlert(id, msg, type = 'success') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'a-alert ' + type;
+  setTimeout(() => { el.className = 'a-alert'; }, 3500);
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+// File → base64
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(file);
+  });
+}
+
+// ══════════════════════════════════
+// PORTFOLIO
+// ══════════════════════════════════
+const portTitle    = document.getElementById('port-title');
+const portCategory = document.getElementById('port-category');
+const portUrl      = document.getElementById('port-url');
+const portFile     = document.getElementById('port-file');
+const portPreview  = document.getElementById('port-preview');
+const portAddBtn   = document.getElementById('port-add-btn');
+const portList     = document.getElementById('port-list');
+const portCount    = document.getElementById('port-count');
+
+// Preview on file select
+portFile.addEventListener('change', async () => {
+  if (!portFile.files[0]) return;
+  const b64 = await fileToBase64(portFile.files[0]);
+  portPreview.innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:cover;">`;
+  portUrl.value = '';
+});
+portUrl.addEventListener('input', () => {
+  if (portUrl.value) {
+    portPreview.innerHTML = `<img src="${portUrl.value}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`;
+    portFile.value = '';
+  } else {
+    portPreview.innerHTML = '';
+  }
+});
+
+portAddBtn.addEventListener('click', async () => {
+  const title = portTitle.value.trim();
+  if (!title) return showAlert('port-alert', 'Please enter a title.', 'error');
+
+  let image = portUrl.value.trim();
+  if (!image && portFile.files[0]) {
+    image = await fileToBase64(portFile.files[0]);
+  }
+  if (!image) return showAlert('port-alert', 'Please add an image (URL or upload).', 'error');
+
+  const items = getPortfolio();
+  items.unshift({ id: uid(), title, category: portCategory.value.trim(), image });
+  STORE.set('tsvc_portfolio', items);
+
+  portTitle.value = portCategory.value = portUrl.value = portFile.value = '';
+  portPreview.innerHTML = '';
+  renderPortfolio();
+  showAlert('port-alert', 'Item added successfully.');
+});
+
+function renderPortfolio() {
+  const items = getPortfolio();
+  portCount.textContent = items.length;
+  portList.innerHTML = '';
+
+  if (!items.length) {
+    portList.innerHTML = '<p style="font-size:0.82rem;color:rgba(255,255,255,0.3);grid-column:1/-1;padding:1rem 0;">No portfolio items yet.</p>';
+    return;
+  }
+  items.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'a-item';
+    el.innerHTML = `
+      <div class="a-item-thumb">
+        <img src="${item.image}" alt="${item.title}" onerror="this.parentElement.innerHTML='No image'">
+      </div>
+      <div class="a-item-body">
+        <div class="a-item-name" title="${item.title}">${item.title}</div>
+        ${item.category ? `<div style="font-size:0.7rem;color:rgba(255,255,255,0.3);margin-bottom:0.4rem;">${item.category}</div>` : ''}
+        <div class="a-item-actions">
+          <button class="a-btn-del" data-del="${item.id}">Delete</button>
+        </div>
+      </div>
+    `;
+    el.querySelector('[data-del]').addEventListener('click', () => deletePortfolioItem(item.id));
+    portList.appendChild(el);
+  });
+}
+
+function deletePortfolioItem(id) {
+  if (!confirm('Delete this portfolio item?')) return;
+  const items = getPortfolio().filter(i => i.id !== id);
+  STORE.set('tsvc_portfolio', items);
+  renderPortfolio();
+}
+
+// ══════════════════════════════════
+// TESTIMONIALS
+// ══════════════════════════════════
+const testName   = document.getElementById('test-name');
+const testRole   = document.getElementById('test-role');
+const testText   = document.getElementById('test-text');
+const testAddBtn = document.getElementById('test-add-btn');
+const testList   = document.getElementById('test-list');
+const testCount  = document.getElementById('test-count');
+
+testAddBtn.addEventListener('click', () => {
+  const name = testName.value.trim();
+  const text = testText.value.trim();
+  if (!name || !text) return showAlert('test-alert', 'Name and testimonial text are required.', 'error');
+
+  const items = getTestimonials();
+  items.push({ id: uid(), name, role: testRole.value.trim(), text });
+  STORE.set('tsvc_testimonials', items);
+
+  testName.value = testRole.value = testText.value = '';
+  renderTestimonials();
+  showAlert('test-alert', 'Testimonial added.');
+});
+
+function renderTestimonials() {
+  const items = getTestimonials();
+  testCount.textContent = items.length;
+  testList.innerHTML = '';
+
+  if (!items.length) {
+    testList.innerHTML = '<p style="font-size:0.82rem;color:rgba(255,255,255,0.3);padding:0.5rem 0;">No testimonials yet.</p>';
+    return;
+  }
+  items.forEach((t, idx) => {
+    const el = document.createElement('div');
+    el.className = 'a-testimonial';
+    el.innerHTML = `
+      <div class="a-testimonial-body">
+        <strong>${t.name}</strong>
+        <div class="role">${t.role || '—'}</div>
+        <div class="quote">"${t.text.length > 120 ? t.text.slice(0,120) + '…' : t.text}"</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem;flex-shrink:0;">
+        ${idx > 0 ? `<button class="a-btn-sm" data-up="${t.id}">↑</button>` : ''}
+        ${idx < items.length-1 ? `<button class="a-btn-sm" data-down="${t.id}">↓</button>` : ''}
+        <button class="a-btn-del" data-del="${t.id}">Delete</button>
+      </div>
+    `;
+    el.querySelector('[data-del]')?.addEventListener('click', () => deleteTestimonial(t.id));
+    el.querySelector('[data-up]')?.addEventListener('click',  () => moveTestimonial(t.id, -1));
+    el.querySelector('[data-down]')?.addEventListener('click', () => moveTestimonial(t.id, 1));
+    testList.appendChild(el);
+  });
+}
+
+function deleteTestimonial(id) {
+  if (!confirm('Delete this testimonial?')) return;
+  STORE.set('tsvc_testimonials', getTestimonials().filter(t => t.id !== id));
+  renderTestimonials();
+}
+
+function moveTestimonial(id, dir) {
+  const items = getTestimonials();
+  const idx   = items.findIndex(t => t.id === id);
+  const swap  = idx + dir;
+  if (swap < 0 || swap >= items.length) return;
+  [items[idx], items[swap]] = [items[swap], items[idx]];
+  STORE.set('tsvc_testimonials', items);
+  renderTestimonials();
+}
+
+// ══════════════════════════════════
+// SERVICES
+// ══════════════════════════════════
+const servicesList  = document.getElementById('services-list');
+const editModal     = document.getElementById('service-edit-modal');
+const editId        = document.getElementById('edit-service-id');
+const editName      = document.getElementById('edit-service-name');
+const editDesc      = document.getElementById('edit-service-desc');
+const editUrl       = document.getElementById('edit-service-url');
+const editFile      = document.getElementById('edit-service-file');
+const editPreview   = document.getElementById('edit-service-preview');
+const saveServiceBtn   = document.getElementById('save-service-btn');
+const cancelEditBtn    = document.getElementById('cancel-edit-btn');
+
+function renderServices() {
+  const services = getServices();
+  servicesList.innerHTML = '';
+  services.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'a-service-card';
+    el.innerHTML = `
+      <div class="a-service-thumb">
+        ${s.image ? `<img src="${s.image}" alt="${s.name}">` : ''}
+        <span class="no-img">${s.image ? '' : 'No image'}</span>
+      </div>
+      <div class="a-service-body">
+        <div class="a-service-name">${s.name}</div>
+        <div class="a-service-actions">
+          <button class="a-btn-sm" data-edit="${s.id}">Edit</button>
+          ${s.image ? `<button class="a-btn-del" data-clear="${s.id}">Clear Image</button>` : ''}
+        </div>
+      </div>
+    `;
+    el.querySelector('[data-edit]')?.addEventListener('click', () => openEditModal(s.id));
+    el.querySelector('[data-clear]')?.addEventListener('click', () => clearServiceImage(s.id));
+    servicesList.appendChild(el);
+  });
+}
+
+function openEditModal(id) {
+  const service = getServices().find(s => s.id === id);
+  if (!service) return;
+
+  editId.value   = id;
+  editName.value = service.name;
+  editDesc.value = service.desc;
+  editUrl.value  = service.image || '';
+  editFile.value = '';
+
+  if (service.image) {
+    editPreview.innerHTML = `<img src="${service.image}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" alt="">`;
+    editPreview.style.position = 'relative';
+  } else {
+    editPreview.innerHTML = 'No Image';
+    editPreview.style.position = '';
+  }
+
+  editModal.style.display = 'flex';
+}
+
+cancelEditBtn.addEventListener('click', () => { editModal.style.display = 'none'; });
+editModal.addEventListener('click', e => { if (e.target === editModal) editModal.style.display = 'none'; });
+
+editFile.addEventListener('change', async () => {
+  if (!editFile.files[0]) return;
+  const b64 = await fileToBase64(editFile.files[0]);
+  editPreview.innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">`;
+  editPreview.style.position = 'relative';
+  editUrl.value = '';
+});
+editUrl.addEventListener('input', () => {
+  if (editUrl.value) {
+    editPreview.innerHTML = `<img src="${editUrl.value}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" onerror="this.style.display='none'">`;
+    editPreview.style.position = 'relative';
+    editFile.value = '';
+  }
+});
+
+saveServiceBtn.addEventListener('click', async () => {
+  const id = editId.value;
+  const services = getServices();
+  const idx = services.findIndex(s => s.id === id);
+  if (idx === -1) return;
+
+  let image = editUrl.value.trim();
+  if (!image && editFile.files[0]) {
+    image = await fileToBase64(editFile.files[0]);
+  }
+
+  services[idx].name  = editName.value.trim() || services[idx].name;
+  services[idx].desc  = editDesc.value.trim() || services[idx].desc;
+  if (image) services[idx].image = image;
+
+  STORE.set('tsvc_services', services);
+  editModal.style.display = 'none';
+  renderServices();
+});
+
+function clearServiceImage(id) {
+  if (!confirm('Remove this image?')) return;
+  const services = getServices();
+  const idx = services.findIndex(s => s.id === id);
+  if (idx !== -1) {
+    services[idx].image = '';
+    STORE.set('tsvc_services', services);
+    renderServices();
+  }
+}
+
+// ── Init ──
+function renderAll() {
+  renderPortfolio();
+  renderTestimonials();
+  renderServices();
+}
+</script>
+</body>
+</html>
